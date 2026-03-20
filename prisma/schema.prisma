@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  patient
+  admin
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role      @default(patient)
+  createdAt    DateTime  @default(now())
+  bookings     Booking[]
+}
+
+model Service {
+  id              String    @id @default(cuid())
+  name            String
+  durationMinutes Int
+  pricePence      Int
+  description     String
+  isActive        Boolean   @default(true)
+  bookings        Booking[]
+}
+
+model WeeklySchedule {
+  id                  String  @id @default(cuid())
+  dayOfWeek           Int
+  startTime           String
+  endTime             String
+  slotDurationMinutes Int     @default(60)
+  isActive            Boolean @default(true)
+}
+
+model BlockedSlot {
+  id           String   @id @default(cuid())
+  slotDatetime DateTime
+  reason       String?
+}
+
+model Booking {
+  id                    String        @id @default(cuid())
+  patient               User          @relation(fields: [patientId], references: [id])
+  patientId             String
+  service               Service       @relation(fields: [serviceId], references: [id])
+  serviceId             String
+  slotDatetime          DateTime
+  status                BookingStatus @default(pending)
+  stripePaymentIntentId String?
+  stripePaymentStatus   String?
+  notes                 String?
+  createdAt             DateTime      @default(now())
+}
